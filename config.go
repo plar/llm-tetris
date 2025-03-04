@@ -6,32 +6,36 @@ import (
 )
 
 type KeyBindings struct {
-	Left     string
-	Right    string
-	Down     string
-	Rotate   string
-	HardDrop string
-	Pause    string
+	Left         string
+	Right        string
+	Down         string
+	Rotate       string
+	HardDrop     string
+	Pause        string
+	ToggleShadow string
 }
 
 type Config struct {
 	KeyBindings    KeyBindings
 	SimpleRotation bool
 	HighScore      int
+	ShowShadow     bool
 }
 
 func NewConfig() *Config {
 	return &Config{
 		KeyBindings: KeyBindings{
-			Left:     "Left",
-			Right:    "Right",
-			Down:     "Down",
-			Rotate:   "Up",
-			HardDrop: " ",
-			Pause:    "P",
+			Left:         "Left",
+			Right:        "Right",
+			Down:         "Down",
+			Rotate:       "Up",
+			HardDrop:     " ",
+			Pause:        "P",
+			ToggleShadow: "S",
 		},
 		SimpleRotation: true, // Default is simple rotation
 		HighScore:      0,
+		ShowShadow:     true,
 	}
 }
 

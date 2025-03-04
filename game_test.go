@@ -3,7 +3,6 @@ package main
 
 import (
 	"os"
-	"strings"
 	"testing"
 )
 
@@ -24,8 +23,8 @@ func TestAutoFall(t *testing.T) {
 
 	// Since the grid height is 20 and tetromino "I" in horizontal position counts 1,
 	// the final position should be the row 19th
-	if finalPos[0] != rows-1 {
-		t.Errorf("Expected final position on row %d, but got %d", rows-1, finalPos[0])
+	if finalPos[0] != glassRows-1 {
+		t.Errorf("Expected final position on row %d, but got %d", glassRows-1, finalPos[0])
 	}
 
 	// Check that moving further down stops after landing
@@ -40,9 +39,9 @@ func TestAutoFallWithCollision(t *testing.T) {
 	tetromino, _ := NewTetromino("O")
 	game.grid = NewGrid()
 	game.tetromino = tetromino
-	tetromino.position = [2]int{17, 0} // Position it close to the bottom
-	game.grid.cells[19][0] = "X"       // Create a block to simulate collision
-	game.grid.cells[19][1] = "X"
+	tetromino.position = [2]int{17, 0}       // Position it close to the bottom
+	game.grid.cells[19][0] = CellStateFilled // Create a block to simulate collision
+	game.grid.cells[19][1] = CellStateFilled
 
 	// Simulate gravity falling
 	canMove := true
@@ -68,22 +67,22 @@ func TestAutoFallWithCollision(t *testing.T) {
 func TestClearFullRow(t *testing.T) {
 	grid := NewGrid()
 	// Fill the entire row
-	for j := 0; j < cols; j++ {
-		grid.cells[10][j] = "X"
+	for j := 0; j < glassCols; j++ {
+		grid.cells[10][j] = CellStateFilled
 	}
 
 	// Clear full rows
 	grid.clearFullRows()
 
 	// Check that row 10 is cleared
-	for j := 0; j < cols; j++ {
-		if grid.cells[10][j] != emptyCell {
+	for j := 0; j < glassCols; j++ {
+		if grid.cells[10][j] != CellStateEmpty {
 			t.Errorf("expected row 10 to be empty, but found %s at col %d", grid.cells[10][j], j)
 		}
 	}
 
 	// Ensure rows above are shifted correctly
-	expectedEmptyRow := [cols]string{emptyCell, emptyCell, emptyCell, emptyCell, emptyCell, emptyCell, emptyCell, emptyCell, emptyCell, emptyCell}
+	expectedEmptyRow := [glassCols]CellState{}
 	for i := 0; i < 10; i++ {
 		if grid.cells[i] != expectedEmptyRow {
 			t.Errorf("expected row %d to be shifted to empty, but got %v", i, grid.cells[i])
@@ -96,18 +95,18 @@ func TestClearMultipleFullRows(t *testing.T) {
 	grid := NewGrid()
 
 	// Fill several rows
-	for j := 0; j < cols; j++ {
-		grid.cells[9][j] = "X"
-		grid.cells[10][j] = "X"
-		grid.cells[11][j] = "X"
+	for j := 0; j < glassCols; j++ {
+		grid.cells[9][j] = CellStateFilled
+		grid.cells[10][j] = CellStateFilled
+		grid.cells[11][j] = CellStateFilled
 	}
 
 	grid.clearFullRows()
 
 	// Check rows that should be cleared
 	for i := 9; i <= 11; i++ {
-		for j := 0; j < cols; j++ {
-			if grid.cells[i][j] != emptyCell {
+		for j := 0; j < glassCols; j++ {
+			if grid.cells[i][j] != CellStateEmpty {
 				t.Errorf("expected row %d to be empty, but found %s at col %d", i, grid.cells[i][j], j)
 			}
 		}
@@ -115,8 +114,8 @@ func TestClearMultipleFullRows(t *testing.T) {
 
 	// Ensure rows above (0-8) are shifted to empty rows
 	for i := 0; i < 9; i++ {
-		for j := 0; j < cols; j++ {
-			if grid.cells[i][j] != emptyCell {
+		for j := 0; j < glassCols; j++ {
+			if grid.cells[i][j] != CellStateEmpty {
 				t.Errorf("expected row %d to be empty after shifting, but got %v", i, grid.cells[i][j])
 			}
 		}
@@ -128,16 +127,23 @@ func TestTetrominoLocking(t *testing.T) {
 	tetromino, _ := NewTetromino("I")
 	game.grid = NewGrid()
 	game.tetromino = tetromino
-	tetromino.position = [2]int{rows - 1, 0}
+	tetromino.position = [2]int{glassRows - 1, 0}
 
 	game.placeTetromino()
 
-	if strings.TrimSpace(strings.Join(game.grid.cells[rows-1][:], "")) != "XXXX" {
+	totalCellFilled := 0
+	for _, c := range game.grid.cells[glassRows-1][:] {
+		if c == CellStateFilled {
+			totalCellFilled++
+		}
+	}
+
+	if totalCellFilled != 4 {
 		t.Error("Expected last row to be filled with 'XXXX'")
 	}
 
 	game.grid.clearFullRows() // Should not clear since it's only filled partway
-	if game.grid.cells[rows-1][0] != "X" {
+	if game.grid.cells[glassRows-1][0] != CellStateFilled {
 		t.Error("Expected 'X' still at bottom after locking")
 	}
 }
@@ -174,8 +180,8 @@ func TestGameOverCondition(t *testing.T) {
 	game := NewGame()
 
 	// Simulate the spawn area as filled
-	for j := 0; j < cols; j++ {
-		game.grid.cells[0][j] = "X"
+	for j := 0; j < glassCols; j++ {
+		game.grid.cells[0][j] = CellStateFilled
 	}
 
 	// Try to spawn a new tetromino and verify game over
@@ -191,8 +197,8 @@ func TestScoreOnLineClear(t *testing.T) {
 
 	// Manually fill rows to simulate line clear
 	for i := 0; i < 4; i++ {
-		for j := 0; j < cols; j++ {
-			game.grid.cells[i][j] = "X"
+		for j := 0; j < glassCols; j++ {
+			game.grid.cells[i][j] = CellStateFilled
 		}
 	}
 	linesCleared := game.grid.clearFullRows()
@@ -210,8 +216,8 @@ func TestMultipleLineClears(t *testing.T) {
 
 	// Fill two rows
 	for i := 0; i < 2; i++ {
-		for j := 0; j < cols; j++ {
-			game.grid.cells[i][j] = "X"
+		for j := 0; j < glassCols; j++ {
+			game.grid.cells[i][j] = CellStateFilled
 		}
 	}
 
@@ -226,8 +232,8 @@ func TestMultipleLineClears(t *testing.T) {
 
 	// Clear two more lines
 	for i := 0; i < 2; i++ {
-		for j := 0; j < cols; j++ {
-			game.grid.cells[i][j] = "X"
+		for j := 0; j < glassCols; j++ {
+			game.grid.cells[i][j] = CellStateFilled
 		}
 	}
 
@@ -247,8 +253,8 @@ func TestLevelProgression(t *testing.T) {
 
 	// Simulate clearing 10 lines
 	for i := 0; i < 10; i++ {
-		for j := 0; j < cols; j++ {
-			game.grid.cells[i][j] = "X"
+		for j := 0; j < glassCols; j++ {
+			game.grid.cells[i][j] = CellStateFilled
 		}
 	}
 	linesCleared := game.grid.clearFullRows()
@@ -278,8 +284,8 @@ func TestGameOverAndRestart(t *testing.T) {
 	game := NewGame()
 
 	// Simulate a filled grid
-	for j := 0; j < cols; j++ {
-		game.grid.cells[0][j] = "X"
+	for j := 0; j < glassCols; j++ {
+		game.grid.cells[0][j] = CellStateFilled
 	}
 
 	// Attempt to spawn a new Tetromino to trigger game over

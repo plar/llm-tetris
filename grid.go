@@ -2,24 +2,16 @@ package main
 
 import "fmt"
 
-const (
-	rows = 20
-	cols = 10
-)
-
-// Cell states in the grid
-const emptyCell = " "
-
 type Grid struct {
-	cells [rows][cols]string
+	cells [glassRows][glassCols]CellState
 }
 
 // NewGrid initializes a 20x10 grid with each cell set to empty.
 func NewGrid() *Grid {
 	grid := &Grid{}
-	for i := 0; i < rows; i++ {
-		for j := 0; j < cols; j++ {
-			grid.cells[i][j] = emptyCell // Using a space to denote an empty cell
+	for i := range glassRows {
+		for j := range glassCols {
+			grid.cells[i][j] = CellStateEmpty // Using a space to denote an empty cell
 		}
 	}
 	return grid
@@ -27,8 +19,8 @@ func NewGrid() *Grid {
 
 // Print displays the grid to the console in a structured format.
 func (g *Grid) Print() {
-	for i := 0; i < rows; i++ {
-		for j := 0; j < cols; j++ {
+	for i := range glassRows {
+		for j := range glassCols {
 			fmt.Printf("|%s", g.cells[i][j])
 		}
 		fmt.Println("|") // Close the row with a "|"
@@ -37,17 +29,17 @@ func (g *Grid) Print() {
 
 // Check if a tetromino can move to a specified position
 func (g *Grid) CanMove(tetromino *Tetromino, newPos [2]int) bool {
-	newShape := tetromino.GetCurrentShape()
-	for i, row := range newShape {
+	shape := tetromino.GetCurrentShape()
+	for i, row := range shape {
 		for j, cell := range row {
 			if cell == 1 {
-				x := newPos[0] + i
-				y := newPos[1] + j
+				y := newPos[0] + i
+				x := newPos[1] + j
 
-				if x < 0 || x >= rows || y < 0 || y >= cols {
+				if y < -2 || y >= glassRows || x < 0 || x >= glassCols {
 					return false // Out of bounds
 				}
-				if g.cells[x][y] != emptyCell {
+				if y >= 0 && g.cells[y][x] != CellStateEmpty {
 					return false // Collision with settled block
 				}
 			}
@@ -81,7 +73,7 @@ func (g *Grid) MoveTetromino(tetromino *Tetromino, direction string) bool {
 // Check if a row is fully filled
 func (g *Grid) isRowFull(row int) bool {
 	for _, cell := range g.cells[row] {
-		if cell == emptyCell {
+		if cell == CellStateEmpty {
 			return false
 		}
 	}
@@ -95,15 +87,15 @@ func (g *Grid) clearRow(row int) {
 		g.cells[i] = g.cells[i-1]
 	}
 	// Clear the top row after shifting
-	for j := 0; j < cols; j++ {
-		g.cells[0][j] = emptyCell
+	for j := range glassCols {
+		g.cells[0][j] = CellStateEmpty
 	}
 }
 
 // clearFullRows removes full rows and returns the number of rows cleared
 func (g *Grid) clearFullRows() int {
 	linesCleared := 0
-	for i := 0; i < rows; i++ {
+	for i := range glassRows {
 		if g.isRowFull(i) {
 			g.clearRow(i)
 			linesCleared++
@@ -118,9 +110,9 @@ func (g *Grid) CanRotate(tetromino *Tetromino) bool {
 	for i, row := range shape {
 		for j, cell := range row {
 			if cell == 1 {
-				x := tetromino.position[0] + i
-				y := tetromino.position[1] + j
-				if x < 0 || x >= rows || y < 0 || y >= cols || g.cells[x][y] != emptyCell {
+				y := tetromino.position[0] + i
+				x := tetromino.position[1] + j
+				if y < -2 || y >= glassRows || x < 0 || x >= glassCols || (y >= 0 && g.cells[y][x] != CellStateEmpty) {
 					return false // Out of bounds or collision
 				}
 			}
@@ -130,9 +122,10 @@ func (g *Grid) CanRotate(tetromino *Tetromino) bool {
 }
 
 // Rotate attempts to rotate the active tetromino clockwise
-func (g *Game) RotateTetromino() {
-	if g.grid.CanRotate(g.tetromino) {
-		g.tetromino.Rotate()
-		g.Render()
+func (g *Game) RotateTetromino() bool {
+	if !g.grid.CanRotate(g.tetromino) {
+		return false
 	}
+	g.tetromino.Rotate()
+	return true
 }

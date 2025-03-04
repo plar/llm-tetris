@@ -81,7 +81,7 @@ func TestRotationBlockedByWall(t *testing.T) {
 	game.tetromino = tetromino
 
 	// Place tetromino near the right wall
-	tetromino.position = [2]int{0, cols - 1}
+	tetromino.position = [2]int{0, glassCols - 1}
 	canRotate := game.grid.CanRotate(tetromino)
 
 	if canRotate {
@@ -96,7 +96,7 @@ func TestRotationBlockedByBlocks(t *testing.T) {
 
 	// Place a blocking block on rotation path
 	tetromino.position = [2]int{1, 1}
-	game.grid.cells[2][1] = "X"
+	game.grid.cells[2][1] = CellStateFilled
 	canRotate := game.grid.CanRotate(tetromino)
 
 	if canRotate {
